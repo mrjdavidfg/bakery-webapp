@@ -21,18 +21,30 @@ module.exports = {
         ]
       },
       {
-        test: /\.scss$/,
+        test: /\.sass$/,
         use: [
           'style-loader', // creates style nodes from JS strings
           'css-loader', // translates CSS into CommonJS
           'sass-loader' // compiles Sass to CSS, using Node Sass by default
         ]
-      }
+      },
+      {
+        test: /\.less$/,
+        use: ['style-loader', 'css-loader', 'less-loader']
+      },
+      { test: /\.css$/, use: ['style-loader', 'css-loader'] }
     ]
+  },
+  resolve: {
+    extensions: ['.js', '.jsx']
   },
   plugins: [
     new HtmlWebPackPlugin({
       template: 'public/index.html'
     })
-  ]
+  ],
+  devServer: {
+    historyApiFallback: true,
+    contentBase: './'
+  }
 }
