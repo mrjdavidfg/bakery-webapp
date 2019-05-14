@@ -1,6 +1,7 @@
-import React from 'react'
-import { Form, Icon, Input, Button, Card } from 'antd'
-import Auth from './util/Auth'
+import React, { useState } from 'react'
+import { Redirect } from 'react-router-dom'
+import { Form, Icon, Input, Button, Card, message } from 'antd'
+import Auth from '../service/Auth'
 
 const centerGridStyle = {
   display: 'grid',
@@ -8,25 +9,31 @@ const centerGridStyle = {
 }
 
 function LogInForm(props) {
+  const [wasLoggedIn, setWasLoggedIn] = useState(false)
+
   const handleSubmit = e => {
     e.preventDefault()
-    props.form.validateFields((err, values) => {
+    props.form.validateFields(async (err, values) => {
       if (!err) {
         const { email, password} = values
 
         if (await Auth.logIn({ email, password})) {
-          this.setState(state => {
-            return {
-              ...state,
-              isLoginOk: true
-            }
-          })
+          message.success('¡Welcome to BakeryJS!', 2)
+          setWasLoggedIn(true)
+        } else {
+          message.error('Authentication failed. Wrong email or password.')
         }
       }
     })
   }
 
   const { getFieldDecorator } = props.form
+
+  if(Auth.isAuthenticated() || wasLoggedIn) {
+    return(
+      <Redirect to="/"/>
+    )
+  }
 
   return (
     <Form onSubmit={handleSubmit} className="login-form">

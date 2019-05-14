@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Table, Modal, Form, Input, Button, Row, Col, Tooltip } from 'antd'
 import ProductForm from './ProductForm'
+import * as service from '../service/productService'
 
 const Search = Input.Search
 
 export default function Product() {
-  const [data, setData] = useState([
-    { id: '1', name: 'Pan', price: 52.2 },
-    { id: '2', name: 'Leche', price: 200.2 }
-  ])
+  const [data, setData] = useState([])
 
   const [visible, setVisible] = useState(false)
   const [visibleEdit, setVisibleEdit] = useState(false)
@@ -22,7 +20,13 @@ export default function Product() {
 
   const handleCreate = e => {
     console.log('Creating...')
-    console.log(formRef.getForm().getFieldsValue())
+    formRef.getForm().validateFields(async (err, values) => {
+      if (!err) {        
+        const created = await service.create(values)
+
+        setData(data.concat(created))
+      }
+    })
     // setTimeout(() => {
     //   this.setState({ loading: false, visible: false });
     // }, 3000);
@@ -68,6 +72,13 @@ export default function Product() {
       formRefs[index] = _formRef
     }
   }
+
+  useEffect(() => {
+    const fetchData = async() => {
+      setData(await service.getAll()) 
+    }
+    fetchData()
+  }, [])
 
   const columns = [
     {

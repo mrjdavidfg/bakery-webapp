@@ -1,14 +1,22 @@
-import Auth from '../util/Auth'
+import Auth from './Auth'
 import env from './env'
 
 export const getAll = async () => {
-  let users = await fetch(`${env.API_URL}/user`)
+  let users = await fetch(`${env.API_URL}/user`, {
+    headers: {
+      'Authorization': `Bearer ${Auth.getToken()}`,
+    }
+  })
   users = await users.json()
   return users
 }
 
 export const getById = async id => {
-  let user = await fetch(`${env.API_URL}/user/${id}`)
+  let user = await fetch(`${env.API_URL}/user/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${Auth.getToken()}`,
+    }
+  })
   user = await user.json()
   return user
 }
@@ -41,7 +49,10 @@ export const update = async data => {
 
 export const deleteById = async id => {
   let response = await fetch(`${env.API_URL}/user/${id}`, {
-    method: 'delete'
+    method: 'delete',
+    headers: {
+      Authorization: `Bearer ${Auth.getToken()}`
+    }
   })
   response = await response.json()
 

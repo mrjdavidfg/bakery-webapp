@@ -1,28 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Table, Tag, Input, Button, Row, Col, Tooltip } from 'antd'
 import UserForm from './UserForm'
+import * as service from '../service/userService'
 
 const Search = Input.Search
 
 export default function User() {
-  const [data, setData] = useState([
-    {
-      id: '1',
-      email: 'mrjdavidfg@gmail.com',
-      firstName: 'David',
-      lastName: 'Ferreira',
-      password: 'abc123',
-      role: 'admin'
-    },
-    {
-      id: '2',
-      email: 'otro@gmail.com',
-      firstName: 'Fulano',
-      lastName: 'De Tal',
-      password: 'abc123',
-      role: 'barista'
-    }
-  ])
+  const [data, setData] = useState([])
 
   const [visible, setVisible] = useState(false)
   const [visibleEdit, setVisibleEdit] = useState(false)
@@ -37,6 +21,15 @@ export default function User() {
   const handleCreate = e => {
     console.log('Creating...')
     console.log(formRef.getForm().getFieldsValue())
+
+    formRef.getForm().validateFields(async (err, values) => {
+      if (!err) {        
+        const created = await service.create(values)
+
+        setData(data.concat(created))
+      }
+    })
+
     // setTimeout(() => {
     //   this.setState({ loading: false, visible: false });
     // }, 3000);
@@ -44,7 +37,6 @@ export default function User() {
   }
 
   const handleCancel = e => {
-    console.log('Cancelled.')
     setVisible(false)
   }
 
@@ -75,12 +67,20 @@ export default function User() {
   const saveFormRef = (_formRef, index) => {
     formRef = _formRef
   }
+
   const saveFormRefEdition = (_formRef, index) => {
     return function(_formRef) {
       console.log(index)
       formRefs[index] = _formRef
     }
   }
+
+  useEffect(() => {
+    const fetchData = async() => {
+      setData(await service.getAll()) 
+    }
+    fetchData()
+  }, [])
 
   const columns = [
     {

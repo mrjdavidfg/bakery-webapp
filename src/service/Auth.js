@@ -1,4 +1,4 @@
-import env from '../../service/env'
+import env from './env'
 
 export default {
   isAuthenticated() {
@@ -11,7 +11,7 @@ export default {
 
   async logIn(credentials) {
     try {
-      let response = await fetch(`${env.URL_API}/auth/token`, {
+      let response = await fetch(`${env.API_URL}/auth/token`, {
         method: 'POST',
         body: JSON.stringify(credentials),
         headers: {
@@ -19,9 +19,15 @@ export default {
           'Content-Type': 'application/json'
         }
       })
+      console.log(response)
       response = await response.json()
+      console.log(response)
 
-      localStorage.setItem('auth_token', response.auth_token)
+      if(response.error) {
+        return false
+      }
+
+      localStorage.setItem('auth_token', response.authToken)
       return true
     } catch (error) {
       console.error(error)

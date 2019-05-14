@@ -5,6 +5,7 @@ import Storefront from './Storefront'
 import Dashboard from './Dashboard'
 import Product from './Product'
 import User from './User'
+import LogOut from './LogOut'
 
 const { Title } = Typography
 const { Header, Content } = Layout
@@ -60,6 +61,7 @@ export default function() {
           <Route exact path="/dashboard" component={Dashboard} />
           <Route exact path="/products" component={Product} />
           <Route exact path="/users" component={User} />
+          <Route exact path="/logout" component={LogOut} />
         </div>
       </Content>
     </Layout>
