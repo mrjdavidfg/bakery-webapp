@@ -1,3 +1,4 @@
 export default {
-  API_URL: 'https://product-api-123.herokuapp.com'
+  // API_URL: 'https://bakeryjs-api.herokuapp.com',
+  API_URL: 'http://localhost:3001'
 }
