@@ -1,5 +1,6 @@
 import React from 'react'
 import { Form, Icon, Input, Button, Card } from 'antd'
+import Auth from './util/Auth'
 
 const centerGridStyle = {
   display: 'grid',
@@ -11,7 +12,16 @@ function LogInForm(props) {
     e.preventDefault()
     props.form.validateFields((err, values) => {
       if (!err) {
-        console.log('Received values of form: ', values)
+        const { email, password} = values
+
+        if (await Auth.logIn({ email, password})) {
+          this.setState(state => {
+            return {
+              ...state,
+              isLoginOk: true
+            }
+          })
+        }
       }
     })
   }
