@@ -1,12 +1,9 @@
 import React, { useState } from 'react'
 import { Redirect } from 'react-router-dom'
-import { Form, Icon, Input, Button, Card, message } from 'antd'
+import { Form, Icon, Input, Button, Card, message, Typography } from 'antd'
 import Auth from '../service/Auth'
 
-const centerGridStyle = {
-  display: 'grid',
-  placeItems: 'center'
-}
+const { Title } = Typography
 
 function LogInForm(props) {
   const [wasLoggedIn, setWasLoggedIn] = useState(false)
@@ -80,8 +77,11 @@ export default function LogIn() {
   const WrappedLogInForm = Form.create({ name: 'login_form' })(LogInForm)
 
   return (
-    <div style={centerGridStyle}>
-      <Card title="BakeryJS" style={{ width: 600 }}>
+    <div className="grid-full-center">
+      <Card
+        title={<Title style={{ paddingBottom: 0 }}>BakeryJS</Title>}
+        style={{ width: 600 }}
+      >
         <WrappedLogInForm />
       </Card>
     </div>

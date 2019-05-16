@@ -21,7 +21,7 @@ export default function Product() {
   const handleCreate = e => {
     console.log('Creating...')
     formRef.getForm().validateFields(async (err, values) => {
-      if (!err) {        
+      if (!err) {
         const created = await service.create(values)
 
         setData(data.concat(created))
@@ -74,8 +74,8 @@ export default function Product() {
   }
 
   useEffect(() => {
-    const fetchData = async() => {
-      setData(await service.getAll()) 
+    const fetchData = async () => {
+      setData(await service.getAll())
     }
     fetchData()
   }, [])

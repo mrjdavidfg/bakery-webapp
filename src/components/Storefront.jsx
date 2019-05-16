@@ -76,6 +76,8 @@ export default function Storefront() {
 
   const handleCreate = () => {
     console.log('Creating order...')
+    console.log(formRef.getForm().getFieldsValue())
+
     setVisible(false)
   }
 
@@ -114,7 +116,7 @@ export default function Storefront() {
       <Text type="secondary">{today.toLocaleDateString('en-US', options)}</Text>
       <List
         grid={{ column: 1 }}
-        dataSource={[]}
+        dataSource={data}
         renderItem={item => (
           <List.Item>
             <Order item={item} />
@@ -132,7 +134,7 @@ export default function Storefront() {
       </Text>
       <List
         grid={{ column: 1 }}
-        dataSource={[]}
+        dataSource={data}
         renderItem={item => (
           <List.Item>
             <Order item={item} />
