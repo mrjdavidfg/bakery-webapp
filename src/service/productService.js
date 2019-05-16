@@ -4,7 +4,7 @@ import env from './env'
 export const getAll = async () => {
   let products = await fetch(`${env.API_URL}/product`, {
     headers: {
-      'Authorization': `Bearer ${Auth.getToken()}`,
+      Authorization: `Bearer ${Auth.getToken()}`
     }
   })
   products = await products.json()
@@ -14,7 +14,7 @@ export const getAll = async () => {
 export const getById = async id => {
   let product = await fetch(`${env.API_URL}/product/${id}`, {
     headers: {
-      'Authorization': `Bearer ${Auth.getToken()}`,
+      Authorization: `Bearer ${Auth.getToken()}`
     }
   })
   product = await product.json()
@@ -52,7 +52,7 @@ export const deleteById = async id => {
   let response = await fetch(`${env.API_URL}/product/${id}`, {
     method: 'delete',
     headers: {
-      'Authorization': `Bearer ${Auth.getToken()}`,
+      Authorization: `Bearer ${Auth.getToken()}`
     }
   })
   response = await response.json()

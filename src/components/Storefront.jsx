@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { List, Divider, Row, Col, Tag, Typography, Input, Button } from 'antd'
 import Order from './Order'
+import OrderNewForm from './OrderNewForm'
 
 const Search = Input.Search
 const { Title, Text } = Typography
@@ -69,6 +70,15 @@ export default function Storefront() {
     setVisible(true)
   }
 
+  const handleCancel = () => {
+    setVisible(false)
+  }
+
+  const handleCreate = () => {
+    console.log('Creating order...')
+    setVisible(false)
+  }
+
   const saveFormRef = (_formRef, index) => {
     formRef = _formRef
   }
@@ -80,9 +90,20 @@ export default function Storefront() {
           <Search placeholder="Search" onSearch={value => console.log(value)} />
         </Col>
         <Col span={6}>
-          <Button type="primary" icon="plus" style={{ width: '100%' }}>
+          <Button
+            type="primary"
+            icon="plus"
+            style={{ width: '100%' }}
+            onClick={showModal}
+          >
             New Order
           </Button>
+          <OrderNewForm
+            ref={saveFormRef}
+            visible={visible}
+            onCancel={handleCancel}
+            onCreate={handleCreate}
+          />
         </Col>
       </Row>
       {/* Today */}

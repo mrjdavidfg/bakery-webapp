@@ -15,9 +15,9 @@ function LogInForm(props) {
     e.preventDefault()
     props.form.validateFields(async (err, values) => {
       if (!err) {
-        const { email, password} = values
+        const { email, password } = values
 
-        if (await Auth.logIn({ email, password})) {
+        if (await Auth.logIn({ email, password })) {
           message.success('¡Welcome to BakeryJS!', 2)
           setWasLoggedIn(true)
         } else {
@@ -29,10 +29,8 @@ function LogInForm(props) {
 
   const { getFieldDecorator } = props.form
 
-  if(Auth.isAuthenticated() || wasLoggedIn) {
-    return(
-      <Redirect to="/"/>
-    )
+  if (Auth.isAuthenticated() || wasLoggedIn) {
+    return <Redirect to="/" />
   }
 
   return (
@@ -48,7 +46,7 @@ function LogInForm(props) {
           ]
         })(
           <Input
-            prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
+            prefix={<Icon type="email" style={{ color: 'rgba(0,0,0,.25)' }} />}
             placeholder="Username"
           />
         )}
