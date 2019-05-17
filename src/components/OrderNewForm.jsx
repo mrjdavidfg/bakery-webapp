@@ -17,60 +17,27 @@ import {
   Divider,
   Statistic,
   Popconfirm,
-  Tag
+  Tag,
+  Carousel
 } from 'antd'
 const { Text, Title } = Typography
 
-function range(start, end) {
-  const result = []
-  for (let i = start; i < end; i++) {
-    result.push(i)
+const steps = [
+  {
+    title: 'Form',
+    content: 'First-content'
+  },
+  {
+    title: 'Review',
+    content: 'Second-content'
+  },
+  {
+    title: 'Done',
+    content: 'Third-content'
   }
-  return result
-}
+]
 
-function disabledDate(current) {
-  // Can not select days before today and today
-  return current && current < moment().endOf('day')
-}
-
-function disabledTime() {
-  return {
-    disabledHours: () => range(0, 4)
-  }
-}
-
-function ModalHeader(props) {
-  const { currentStep } = props
-
-  const steps = [
-    {
-      title: 'Form',
-      content: 'First-content'
-    },
-    {
-      title: 'Review',
-      content: 'Second-content'
-    },
-    {
-      title: 'Done',
-      content: 'Third-content'
-    }
-  ]
-
-  return (
-    <React.Fragment>
-      <Title level={2}>New Order</Title>
-      <Steps size="small" current={currentStep}>
-        {steps.map(item => (
-          <Steps.Step key={item.title} title={item.title} />
-        ))}
-      </Steps>
-    </React.Fragment>
-  )
-}
-
-//needed for products items adding and removing
+//needed for product items adding and removing
 let id = 0
 
 export default Form.create({ name: 'new_order_form' })(function(props) {
@@ -224,7 +191,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
   }
 
   const processOrder = async () => {
-    await wait(1)
+    await wait(2)
 
     onCreate()
   }
@@ -271,161 +238,211 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
   return (
     <Modal
       visible={visible}
-      title={<ModalHeader currentStep={currentStep} />}
+      title={
+        <React.Fragment>
+          <Title level={2}>New Order</Title>
+          <Steps size="small" current={currentStep}>
+            {steps.map(s => (
+              <Steps.Step key={s.title} title={s.title} />
+            ))}
+          </Steps>
+        </React.Fragment>
+      }
       footer={currentStep === 0 ? modalFooter : modalFooterReview}
       width={1000}
       closable={false}
     >
-      <Form layout="vertical" className={currentStep === 0 ? '' : 'hide'}>
-        <Row gutter={12}>
-          {/* Fist Column */}
-          <Col span={6}>
-            <Form.Item label="Due Date">
-              {getFieldDecorator('dueDate', {
-                initialValue: moment(new Date()).add(1, 'days'),
-                rules: [
-                  {
-                    type: 'object',
-                    required: true,
-                    message: 'Please select a date!'
-                  }
-                ]
-              })(
-                <DatePicker
-                  disabledDate={disabledDate}
-                  format="DD/MM/YYYY"
-                  style={{ width: '100%' }}
-                />
-              )}
-            </Form.Item>
-            <Form.Item label="Due Time">
-              {getFieldDecorator('dueTime', {
-                rules: [
-                  {
-                    type: 'object',
-                    required: true,
-                    message: 'Please select a time!'
-                  }
-                ]
-              })(
-                <TimePicker
-                  use12Hours
-                  format="h:mm a"
-                  minuteStep={60}
-                  style={{ width: '100%' }}
-                />
-              )}
-            </Form.Item>
-          </Col>
-          {/* Second Column */}
-          <Col span={18}>
-            {/* Customer Row */}
-            <Row gutter={6}>
-              <Col span={18}>
-                <Form.Item label="Customer">
-                  {getFieldDecorator('customer', {
-                    rules: [
-                      {
-                        required: true,
-                        message: 'Please input the name of the customer!'
-                      }
-                    ]
-                  })(
-                    <Input
-                      prefix={
-                        <Icon
-                          type="user"
-                          style={{ color: 'rgba(0,0,0,.25)' }}
-                        />
-                      }
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item label="Aditional Details">
-                  {getFieldDecorator('details', {
-                    rules: [
-                      {
-                        required: false
-                      }
-                    ]
-                  })(<Input />)}
-                </Form.Item>
-              </Col>
-              <Col span={6}>
-                <Form.Item label="Phone">
-                  {getFieldDecorator('phone', {
-                    rules: [
-                      {
-                        required: true,
-                        message: 'Please input the customer phone!'
-                      }
-                    ]
-                  })(
-                    <Input
-                      prefix={
-                        <Icon
-                          type="phone"
-                          style={{ color: 'rgba(0,0,0,.25)' }}
-                        />
-                      }
-                    />
-                  )}
-                </Form.Item>
-              </Col>
-            </Row>
+      {currentStep === 0 && (
+        <Form layout="vertical">
+          <Row gutter={12}>
+            {/* Fist Column */}
+            <Col span={6}>
+              <Form.Item label="Due Date">
+                {getFieldDecorator('dueDate', {
+                  initialValue: moment(new Date()).add(1, 'days'),
+                  rules: [
+                    {
+                      type: 'object',
+                      required: true,
+                      message: 'Please select a date!'
+                    }
+                  ]
+                })(
+                  <DatePicker
+                    disabledDate={disabledDate}
+                    format="DD/MM/YYYY"
+                    style={{ width: '100%' }}
+                  />
+                )}
+              </Form.Item>
+              <Form.Item label="Due Time">
+                {getFieldDecorator('dueTime', {
+                  rules: [
+                    {
+                      type: 'object',
+                      required: true,
+                      message: 'Please select a time!'
+                    }
+                  ]
+                })(
+                  <TimePicker
+                    use12Hours
+                    format="h:mm a"
+                    minuteStep={60}
+                    style={{ width: '100%' }}
+                  />
+                )}
+              </Form.Item>
+            </Col>
+            {/* Second Column */}
+            <Col span={18}>
+              {/* Customer Row */}
+              <Row gutter={6}>
+                <Col span={18}>
+                  <Form.Item label="Customer">
+                    {getFieldDecorator('customer', {
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Please input the name of the customer!'
+                        }
+                      ]
+                    })(
+                      <Input
+                        prefix={
+                          <Icon
+                            type="user"
+                            style={{ color: 'rgba(0,0,0,.25)' }}
+                          />
+                        }
+                      />
+                    )}
+                  </Form.Item>
+                  <Form.Item label="Aditional Details">
+                    {getFieldDecorator('details', {
+                      rules: [
+                        {
+                          required: false
+                        }
+                      ]
+                    })(<Input />)}
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="Phone">
+                    {getFieldDecorator('phone', {
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Please input the customer phone!'
+                        }
+                      ]
+                    })(
+                      <Input
+                        prefix={
+                          <Icon
+                            type="phone"
+                            style={{ color: 'rgba(0,0,0,.25)' }}
+                          />
+                        }
+                      />
+                    )}
+                  </Form.Item>
+                </Col>
+              </Row>
 
-            <Row gutter={6} />
-          </Col>
-        </Row>
-        {/* Products Row */}
-        <Row gutter={6}>
-          <Divider>Products List</Divider>
-          {productsFormItems}
-        </Row>
-      </Form>
-      <Review className={currentStep === 1 ? '' : 'hide'} />
+              <Row gutter={6} />
+            </Col>
+          </Row>
+          {/* Products Row */}
+          <Row gutter={6}>
+            <Divider>Products List</Divider>
+            {productsFormItems}
+          </Row>
+        </Form>
+      )}
+      {currentStep === 1 && <Review form={form} products={products} />}
     </Modal>
   )
 })
 
 const Review = props => {
-  const { className } = props
+  const { form, products } = props
+
+  const {
+    customer,
+    details,
+    phone,
+    dueDate,
+    dueTime,
+    items
+  } = form.getFieldsValue()
 
   return (
-    <Row className={className}>
-      <Col span={4}>
-        <Text>Due</Text>
-        <br />
-        <Title level={2}>May 17</Title>
-        <Text>Friday</Text>
-      </Col>
-      <Col span={4}>
-        <Text />
-        <br />
-        <Title level={2}>4:00 PM</Title>
-        <Text>Store</Text>
-      </Col>
-      <Col span={12}>
-        <Text>Customer</Text>
-        <br />
-        <Title level={2}>David Ferreira</Title>
-        <Divider />
-        <Text>Products</Text>
-        <br />
-        <Title level={3} style={{ display: 'inline-block' }}>
-          Pan
-        </Title>
-        <Tag>2</Tag>x<Text>$ 400</Text>
-      </Col>
-      <Col span={4}>
-        <Text>Phone Number</Text>
-        <br />
-        <Title level={2}>123456</Title>
-      </Col>
-    </Row>
+    <div>
+      <Row>
+        <Col span={4}>
+          <Text>Due</Text>
+          <br />
+          <Title level={2}>{dueDate.format('MMM D')}</Title>
+          <Text>Friday</Text>
+        </Col>
+        <Col span={4}>
+          <Text />
+          <br />
+          <Title level={2}>{dueTime.format('LT')}</Title>
+          <Text>Store</Text>
+        </Col>
+        <Col span={12}>
+          <Text>Customer</Text>
+          <br />
+          <Title level={2}>{customer}</Title>
+          <Text strong>Aditional details</Text>
+          <Text>{details}</Text>
+        </Col>
+        <Col span={4}>
+          <Text>Phone Number</Text>
+          <br />
+          <Title level={2}>{phone}</Title>
+        </Col>
+      </Row>
+      <Row>
+        <Divider>Products</Divider>
+        {items
+          .filter(i => i.id)
+          .map(i => (
+            <React.Fragment>
+              <Title level={3} style={{ display: 'inline-block' }}>
+                {products[i.id].name}
+              </Title>
+              <Tag>{i.quantity}</Tag>x
+              <Text>$ {products[i.id].price * i.quantity}</Text>
+            </React.Fragment>
+          ))}
+      </Row>
+    </div>
   )
 }
 
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function range(start, end) {
+  const result = []
+  for (let i = start; i < end; i++) {
+    result.push(i)
+  }
+  return result
+}
+
+function disabledDate(current) {
+  // Can not select days before today and today
+  return current && current < moment().endOf('day')
+}
+
+function disabledTime() {
+  return {
+    disabledHours: () => range(0, 4)
+  }
 }
