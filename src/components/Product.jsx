@@ -26,16 +26,15 @@ export default function Product() {
 
         setData(data.concat(created))
       }
+      setVisible(false)
+      formRef.resetFields()
     })
-    // setTimeout(() => {
-    //   this.setState({ loading: false, visible: false });
-    // }, 3000);
-    setVisible(false)
   }
 
   const handleCancel = e => {
     console.log('Cancelled.')
     setVisible(false)
+    formRef.resetFields()
   }
 
   const showModalEdit = () => {

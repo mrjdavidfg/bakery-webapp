@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import * as productService from '../service/productService'
 import moment from 'moment'
 import {
   Button,
@@ -18,7 +19,7 @@ import {
   Statistic,
   Popconfirm,
   Tag,
-  Carousel
+  Alert
 } from 'antd'
 const { Text, Title } = Typography
 
@@ -45,10 +46,10 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
   const { getFieldDecorator, getFieldValue, validateFields } = form
 
   const [currentStep, setCurrentStep] = useState(0)
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Pan', price: 200 },
-    { id: 2, name: 'Leche', price: 400 }
-  ])
+  const [products, setProducts] = useState(new Map())
+  const [wasProductsDropdownFocused, setWasProductsDropdownFocused] = useState(
+    false
+  )
 
   getFieldDecorator('keys', { initialValue: [0] })
   const keys = getFieldValue('keys')
@@ -78,17 +79,21 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
     })
   }
 
-  const productsFormItems = keys.map(k => {
+  const loadProducts = () => {
+    setWasProductsDropdownFocused(true)
+  }
+
+  const productsFormItems = keys.map((k, index) => {
     const productId = getFieldValue(`items[${k}].id`)
     const quantity = getFieldValue(`items[${k}].quantity`) || 1
     let price
     if (productId && quantity) {
-      price = products.find(p => p.id === productId).price * quantity
+      price = products.get(productId).price * quantity
     }
 
     return (
       <React.Fragment key={k}>
-        {k !== 0 ? <Divider dashed /> : undefined}
+        {index !== 0 && <Divider dashed />}
         <Row gutter={6}>
           <Col span={18}>
             <Row gutter={6}>
@@ -97,10 +102,11 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
                   {getFieldDecorator(`items[${k}].id`)(
                     <Select
                       placeholder="Select a product"
-                      onChange={() => add(k)}
+                      onSelect={() => add(k)}
+                      onFocus={() => loadProducts()}
                       showSearch
                     >
-                      {products.map(p => (
+                      {Array.from(products).map(([k, p]) => (
                         <Select.Option value={p.id} key={p.id}>
                           {p.name}
                         </Select.Option>
@@ -167,7 +173,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
       if (i.id === undefined) {
         return 0
       }
-      return products[i.id - 1].price * i.quantity
+      return products.get(i.id).price * i.quantity
     })
     .reduce((a, b) => a + b)
 
@@ -182,19 +188,32 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
         return
       }
 
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(1)
     })
   }
 
   const back = () => {
-    setCurrentStep(currentStep - 1)
+    setCurrentStep(0)
   }
 
   const processOrder = async () => {
-    await wait(2)
+    setCurrentStep(2)
+    await wait(1)
 
     onCreate()
+    setCurrentStep(0) //reset step for next openning of modal
   }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const _products = await productService.getAll()
+      setProducts(new Map(_products.map(p => [p.id, p])))
+    }
+
+    if (wasProductsDropdownFocused) {
+      fetchData()
+    }
+  }, [wasProductsDropdownFocused])
 
   const totalStatistic = (
     <Statistic
@@ -224,12 +243,23 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
   ]
 
   const modalFooterReview = [
-    <Button key="back" onClick={() => back()} style={{ float: 'left' }}>
+    <Button
+      key="back"
+      onClick={() => back()}
+      style={{ float: 'left' }}
+      disabled={currentStep === 2}
+    >
       <Icon type="arrow-left" />
       Back
     </Button>,
     totalStatistic,
-    <Button key="ok" type="primary" onClick={() => processOrder()}>
+    <Button
+      key="ok"
+      type="primary"
+      onClick={async () => await processOrder()}
+      disabled={currentStep === 2}
+      loading={currentStep === 2}
+    >
       Process Order
       <Icon type="check" />
     </Button>
@@ -252,116 +282,120 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
       width={1000}
       closable={false}
     >
-      {currentStep === 0 && (
-        <Form layout="vertical">
-          <Row gutter={12}>
-            {/* Fist Column */}
-            <Col span={6}>
-              <Form.Item label="Due Date">
-                {getFieldDecorator('dueDate', {
-                  initialValue: moment(new Date()).add(1, 'days'),
-                  rules: [
-                    {
-                      type: 'object',
-                      required: true,
-                      message: 'Please select a date!'
-                    }
-                  ]
-                })(
-                  <DatePicker
-                    disabledDate={disabledDate}
-                    format="DD/MM/YYYY"
-                    style={{ width: '100%' }}
-                  />
-                )}
-              </Form.Item>
-              <Form.Item label="Due Time">
-                {getFieldDecorator('dueTime', {
-                  rules: [
-                    {
-                      type: 'object',
-                      required: true,
-                      message: 'Please select a time!'
-                    }
-                  ]
-                })(
-                  <TimePicker
-                    use12Hours
-                    format="h:mm a"
-                    minuteStep={60}
-                    style={{ width: '100%' }}
-                  />
-                )}
-              </Form.Item>
-            </Col>
-            {/* Second Column */}
-            <Col span={18}>
-              {/* Customer Row */}
-              <Row gutter={6}>
-                <Col span={18}>
-                  <Form.Item label="Customer">
-                    {getFieldDecorator('customer', {
-                      rules: [
-                        {
-                          required: true,
-                          message: 'Please input the name of the customer!'
-                        }
-                      ]
-                    })(
-                      <Input
-                        prefix={
-                          <Icon
-                            type="user"
-                            style={{ color: 'rgba(0,0,0,.25)' }}
-                          />
-                        }
-                      />
-                    )}
-                  </Form.Item>
-                  <Form.Item label="Aditional Details">
-                    {getFieldDecorator('details', {
-                      rules: [
-                        {
-                          required: false
-                        }
-                      ]
-                    })(<Input />)}
-                  </Form.Item>
-                </Col>
-                <Col span={6}>
-                  <Form.Item label="Phone">
-                    {getFieldDecorator('phone', {
-                      rules: [
-                        {
-                          required: true,
-                          message: 'Please input the customer phone!'
-                        }
-                      ]
-                    })(
-                      <Input
-                        prefix={
-                          <Icon
-                            type="phone"
-                            style={{ color: 'rgba(0,0,0,.25)' }}
-                          />
-                        }
-                      />
-                    )}
-                  </Form.Item>
-                </Col>
-              </Row>
+      <Form layout="vertical" className={currentStep === 0 ? '' : 'hidden'}>
+        <Row gutter={12}>
+          {/* Fist Column */}
+          <Col span={6}>
+            <Form.Item label="Due Date">
+              {getFieldDecorator('dueDate', {
+                initialValue: moment(new Date()).add(1, 'days'),
+                rules: [
+                  {
+                    type: 'object',
+                    required: true,
+                    message: 'Please select a date!'
+                  }
+                ]
+              })(
+                <DatePicker
+                  disabledDate={disabledDate}
+                  format="DD/MM/YYYY"
+                  style={{ width: '100%' }}
+                />
+              )}
+            </Form.Item>
+            <Form.Item label="Due Time">
+              {getFieldDecorator('dueTime', {
+                rules: [
+                  {
+                    type: 'object',
+                    required: true,
+                    message: 'Please select a time!'
+                  }
+                ]
+              })(
+                <TimePicker
+                  use12Hours
+                  format="h:mm a"
+                  minuteStep={60}
+                  style={{ width: '100%' }}
+                  hideDisabledOptions
+                />
+              )}
+            </Form.Item>
+          </Col>
+          {/* Second Column */}
+          <Col span={18}>
+            {/* Customer Row */}
+            <Row gutter={6}>
+              <Col span={18}>
+                <Form.Item label="Customer">
+                  {getFieldDecorator('customer', {
+                    rules: [
+                      {
+                        required: true,
+                        message: 'Please input the name of the customer!'
+                      }
+                    ]
+                  })(
+                    <Input
+                      prefix={
+                        <Icon
+                          type="user"
+                          style={{ color: 'rgba(0,0,0,.25)' }}
+                        />
+                      }
+                    />
+                  )}
+                </Form.Item>
+                <Form.Item label="Aditional Details">
+                  {getFieldDecorator('details', {
+                    rules: [
+                      {
+                        required: false
+                      }
+                    ]
+                  })(<Input />)}
+                </Form.Item>
+              </Col>
+              <Col span={6}>
+                <Form.Item label="Phone">
+                  {getFieldDecorator('phone', {
+                    rules: [
+                      {
+                        required: true,
+                        message: 'Please input the customer phone!'
+                      }
+                    ]
+                  })(
+                    <Input
+                      prefix={
+                        <Icon
+                          type="phone"
+                          style={{ color: 'rgba(0,0,0,.25)' }}
+                        />
+                      }
+                    />
+                  )}
+                </Form.Item>
+              </Col>
+            </Row>
 
-              <Row gutter={6} />
-            </Col>
-          </Row>
-          {/* Products Row */}
-          <Row gutter={6}>
-            <Divider>Products List</Divider>
-            {productsFormItems}
-          </Row>
-        </Form>
-      )}
+            <Row gutter={6} />
+          </Col>
+        </Row>
+        {/* Products Row */}
+        <Row gutter={6}>
+          <Divider>Products List</Divider>
+          {productsFormItems}
+        </Row>
+      </Form>
       {currentStep === 1 && <Review form={form} products={products} />}
+      {currentStep === 2 && (
+        <div className="flex-full-center">
+          <Alert message="Order created" type="success" />
+        </div>
+      )}
     </Modal>
   )
 })
@@ -390,7 +424,7 @@ const Review = props => {
         <Col span={4}>
           <Text />
           <br />
-          <Title level={2}>{dueTime.format('LT')}</Title>
+          <Title level={2}>{dueTime && dueTime.format('LT')}</Title>
           <Text>Store</Text>
         </Col>
         <Col span={12}>
@@ -411,12 +445,12 @@ const Review = props => {
         {items
           .filter(i => i.id)
           .map(i => (
-            <React.Fragment>
+            <React.Fragment key={i.id}>
               <Title level={3} style={{ display: 'inline-block' }}>
-                {products[i.id].name}
+                {products.get(i.id).name}
               </Title>
               <Tag>{i.quantity}</Tag>x
-              <Text>$ {products[i.id].price * i.quantity}</Text>
+              <Text>$ {products.get(i.id).price * i.quantity}</Text>
             </React.Fragment>
           ))}
       </Row>
@@ -425,7 +459,7 @@ const Review = props => {
 }
 
 function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise(resolve => setTimeout(resolve, ms * 1000))
 }
 
 function range(start, end) {

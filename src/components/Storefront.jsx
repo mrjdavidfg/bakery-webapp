@@ -71,13 +71,14 @@ export default function Storefront() {
   }
 
   const handleCancel = () => {
+    formRef.resetFields()
     setVisible(false)
   }
 
   const handleCreate = () => {
     console.log('Creating order...')
     console.log(formRef.getForm().getFieldsValue())
-
+    formRef.resetFields()
     setVisible(false)
   }
 
