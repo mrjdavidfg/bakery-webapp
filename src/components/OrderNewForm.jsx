@@ -16,10 +16,11 @@ import {
   Select,
   Typography,
   Divider,
-  Statistic,
   Popconfirm,
   Tag,
-  Alert
+  Alert,
+  List,
+  Card
 } from 'antd'
 const { Text, Title } = Typography
 
@@ -216,12 +217,10 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
   }, [wasProductsDropdownFocused])
 
   const totalStatistic = (
-    <Statistic
-      key="total"
-      title="Total"
-      value={`$ ${totalPrice || 0.0}`}
-      style={{ display: 'inline-block', paddingRight: 15 }}
-    />
+    <div key="total" style={{ display: 'inline-block', marginRight: 10 }}>
+      <Text>Total </Text>
+      <Text strong style={{ fontSize: 20 }}>{`$ ${totalPrice || 0.0}`}</Text>
+    </div>
   )
 
   const modalFooter = [
@@ -431,8 +430,13 @@ const Review = props => {
           <Text>Customer</Text>
           <br />
           <Title level={2}>{customer}</Title>
-          <Text strong>Aditional details</Text>
-          <Text>{details}</Text>
+          {details && (
+            <React.Fragment>
+              <Text strong>Aditional details</Text>
+              <br />
+              <Text>{details}</Text>
+            </React.Fragment>
+          )}
         </Col>
         <Col span={4}>
           <Text>Phone Number</Text>
@@ -442,17 +446,41 @@ const Review = props => {
       </Row>
       <Row>
         <Divider>Products</Divider>
-        {items
-          .filter(i => i.id)
-          .map(i => (
-            <React.Fragment key={i.id}>
-              <Title level={3} style={{ display: 'inline-block' }}>
-                {products.get(i.id).name}
-              </Title>
-              <Tag>{i.quantity}</Tag>x
-              <Text>$ {products.get(i.id).price * i.quantity}</Text>
-            </React.Fragment>
-          ))}
+        <List
+          grid={{
+            gutter: 10,
+            column: 2
+          }}
+          dataSource={items.filter(i => i.id)}
+          renderItem={item => (
+            <List.Item>
+              <Card
+                bodyStyle={{
+                  padding: 10
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <Title
+                    level={4}
+                    style={{ display: 'inline-block', marginBottom: 0 }}
+                  >
+                    {products.get(item.id).name}
+                  </Title>
+                  <div>
+                    <Tag>{item.quantity}</Tag>x
+                    <Text> ${products.get(item.id).price * item.quantity}</Text>
+                  </div>
+                </div>
+              </Card>
+            </List.Item>
+          )}
+        />
       </Row>
     </div>
   )
