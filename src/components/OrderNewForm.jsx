@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import * as productService from '../service/productService'
+import * as pickUpLocationService from '../service/pickUpLocationService'
 import moment from 'moment'
 import {
   Button,
@@ -43,14 +44,25 @@ const steps = [
 let id = 0
 
 export default Form.create({ name: 'new_order_form' })(function(props) {
+  //#region STATE
   const { visible, onCancel, onCreate, form } = props
   const { getFieldDecorator, getFieldValue, validateFields } = form
 
   const [currentStep, setCurrentStep] = useState(0)
   const [products, setProducts] = useState(new Map())
+  const [pickUpLocations, setPickUpLocations] = useState(new Map())
   const [wasProductsDropdownFocused, setWasProductsDropdownFocused] = useState(
     false
-  )
+  ) //control products deferred loading when dropdown focused
+  const [
+    wasPickUpLocationsDropdownFocused,
+    setWasPickUpLocationsDropdownFocused
+  ] = useState(false) //control pick up locations deferred loading when dropdown focused
+  const [isPickUpLocationsLoading, setIsPickUpLocationsLoading] = useState(
+    false
+  ) //control loading icon in dropdown when loading pickup locations
+  const [isProductsLoading, setIsProductsLoading] = useState(false) //control loading icon in dropdown when loading pickup locations
+  //#endregion
 
   getFieldDecorator('keys', { initialValue: [0] })
   const keys = getFieldValue('keys')
@@ -61,7 +73,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
     }
 
     const nextKeys = keys.concat(++id)
-    // can use data-binding to set
+
     // important! notify form to detect changes
     form.setFieldsValue({
       keys: nextKeys
@@ -69,23 +81,25 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
   }
 
   const remove = k => {
-    // We need at least one passenger
+    // We need at least one
     if (keys.length === 1) {
       return
     }
 
-    // can use data-binding to set
     form.setFieldsValue({
       keys: keys.filter(key => key !== k)
     })
   }
 
   const loadProducts = () => {
-    setWasProductsDropdownFocused(true)
+    if (!wasProductsDropdownFocused) {
+      setIsProductsLoading(true)
+      setWasProductsDropdownFocused(true)
+    }
   }
 
   const productsFormItems = keys.map((k, index) => {
-    const productId = getFieldValue(`items[${k}].id`)
+    const productId = getFieldValue(`items[${k}].product`)
     const quantity = getFieldValue(`items[${k}].quantity`) || 1
     let price
     if (productId && quantity) {
@@ -100,12 +114,13 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
             <Row gutter={6}>
               <Col span={18}>
                 <Form.Item label="Product">
-                  {getFieldDecorator(`items[${k}].id`)(
+                  {getFieldDecorator(`items[${k}].product`)(
                     <Select
                       placeholder="Select a product"
                       onSelect={() => add(k)}
                       onFocus={() => loadProducts()}
                       showSearch
+                      loading={isProductsLoading}
                     >
                       {Array.from(products).map(([k, p]) => (
                         <Select.Option value={p.id} key={p.id}>
@@ -171,10 +186,10 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
 
   const totalPrice = getFieldValue('items')
     .map(i => {
-      if (i.id === undefined) {
+      if (i.product === undefined) {
         return 0
       }
-      return products.get(i.id).price * i.quantity
+      return products.get(i.product).price * i.quantity
     })
     .reduce((a, b) => a + b)
 
@@ -185,7 +200,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
         return
       }
 
-      if (values.items[0].id === undefined) {
+      if (values.items[0].product === undefined) {
         return
       }
 
@@ -201,20 +216,36 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
     setCurrentStep(2)
     await wait(1)
 
-    onCreate()
+    await onCreate()
     setCurrentStep(0) //reset step for next openning of modal
   }
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fechProducts = async () => {
       const _products = await productService.getAll()
       setProducts(new Map(_products.map(p => [p.id, p])))
     }
+    const fechPickUpLocations = async () => {
+      const _pickUpLoc = await pickUpLocationService.getAll()
+      setPickUpLocations(new Map(_pickUpLoc.map(p => [p.id, p])))
+    }
 
     if (wasProductsDropdownFocused) {
-      fetchData()
+      fechProducts()
+      setIsProductsLoading(false)
     }
-  }, [wasProductsDropdownFocused])
+    if (wasPickUpLocationsDropdownFocused) {
+      fechPickUpLocations()
+      setIsPickUpLocationsLoading(false)
+    }
+  }, [wasProductsDropdownFocused, wasPickUpLocationsDropdownFocused])
+
+  const loadPickUpLocations = () => {
+    if (!wasPickUpLocationsDropdownFocused) {
+      setIsPickUpLocationsLoading(true)
+      setWasPickUpLocationsDropdownFocused(true)
+    }
+  }
 
   const totalStatistic = (
     <div key="total" style={{ display: 'inline-block', marginRight: 10 }}>
@@ -287,7 +318,10 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
           <Col span={6}>
             <Form.Item label="Due Date">
               {getFieldDecorator('dueDate', {
-                initialValue: moment(new Date()).add(1, 'days'),
+                initialValue: moment(new Date())
+                  .add(1, 'days')
+                  .add(1, 'hour')
+                  .startOf('hour'),
                 rules: [
                   {
                     type: 'object',
@@ -298,28 +332,32 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
               })(
                 <DatePicker
                   disabledDate={disabledDate}
-                  format="DD/MM/YYYY"
+                  disabledTime={disabledTime}
+                  format="DD/MM/YYYY  |  h:mm a"
                   style={{ width: '100%' }}
+                  showTime={{
+                    use12Hours: true,
+                    minuteStep: 15,
+                    hideDisabledOptions: true,
+                    format: 'h:mm a',
+                    disabledTime: disabledTime
+                  }}
                 />
               )}
             </Form.Item>
-            <Form.Item label="Due Time">
-              {getFieldDecorator('dueTime', {
-                rules: [
-                  {
-                    type: 'object',
-                    required: true,
-                    message: 'Please select a time!'
-                  }
-                ]
-              })(
-                <TimePicker
-                  use12Hours
-                  format="h:mm a"
-                  minuteStep={60}
-                  style={{ width: '100%' }}
-                  hideDisabledOptions
-                />
+            <Form.Item label="PickUp Location">
+              {getFieldDecorator(`pickUpLocation`)(
+                <Select
+                  placeholder="Select a pick up location"
+                  onFocus={() => loadPickUpLocations()}
+                  loading={isPickUpLocationsLoading}
+                >
+                  {Array.from(pickUpLocations).map(([k, p]) => (
+                    <Select.Option value={p.id} key={p.id}>
+                      {p.name}
+                    </Select.Option>
+                  ))}
+                </Select>
               )}
             </Form.Item>
           </Col>
@@ -329,11 +367,11 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
             <Row gutter={6}>
               <Col span={18}>
                 <Form.Item label="Customer">
-                  {getFieldDecorator('customer', {
+                  {getFieldDecorator('name', {
                     rules: [
                       {
                         required: true,
-                        message: 'Please input the name of the customer!'
+                        message: 'Please input the customer name!'
                       }
                     ]
                   })(
@@ -402,14 +440,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
 const Review = props => {
   const { form, products } = props
 
-  const {
-    customer,
-    details,
-    phone,
-    dueDate,
-    dueTime,
-    items
-  } = form.getFieldsValue()
+  const { name, details, phone, dueDate, items } = form.getFieldsValue()
 
   return (
     <div>
@@ -423,13 +454,13 @@ const Review = props => {
         <Col span={4}>
           <Text />
           <br />
-          <Title level={2}>{dueTime && dueTime.format('LT')}</Title>
+          <Title level={2}>{dueDate.format('LT')}</Title>
           <Text>Store</Text>
         </Col>
         <Col span={12}>
           <Text>Customer</Text>
           <br />
-          <Title level={2}>{customer}</Title>
+          <Title level={2}>{name}</Title>
           {details && (
             <React.Fragment>
               <Text strong>Aditional details</Text>
@@ -451,7 +482,7 @@ const Review = props => {
             gutter: 10,
             column: 2
           }}
-          dataSource={items.filter(i => i.id)}
+          dataSource={items.filter(i => i.product)}
           renderItem={item => (
             <List.Item>
               <Card
@@ -470,11 +501,14 @@ const Review = props => {
                     level={4}
                     style={{ display: 'inline-block', marginBottom: 0 }}
                   >
-                    {products.get(item.id).name}
+                    {products.get(item.product).name}
                   </Title>
                   <div>
                     <Tag>{item.quantity}</Tag>x
-                    <Text> ${products.get(item.id).price * item.quantity}</Text>
+                    <Text>
+                      {' '}
+                      ${products.get(item.product).price * item.quantity}
+                    </Text>
                   </div>
                 </div>
               </Card>
@@ -505,6 +539,6 @@ function disabledDate(current) {
 
 function disabledTime() {
   return {
-    disabledHours: () => range(0, 4)
+    disabledHours: () => [12]
   }
 }

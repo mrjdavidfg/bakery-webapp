@@ -43,7 +43,7 @@ function LogInForm(props) {
           ]
         })(
           <Input
-            prefix={<Icon type="email" style={{ color: 'rgba(0,0,0,.25)' }} />}
+            prefix={<Icon type="mail" style={{ color: 'rgba(0,0,0,.25)' }} />}
             placeholder="Username"
           />
         )}

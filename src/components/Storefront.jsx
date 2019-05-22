@@ -1,69 +1,34 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useLayoutEffect } from 'react'
 import { List, Divider, Row, Col, Tag, Typography, Input, Button } from 'antd'
 import Order from './Order'
 import OrderNewForm from './OrderNewForm'
+import * as service from '../service/orderService'
 
 const Search = Input.Search
 const { Title, Text } = Typography
 
-const data = [
-  {
-    date: '12:00 PM',
-    state: 'ready',
-    pickUpLocation: 'Store',
-    user: {
-      name: 'David Ferreira'
-    },
-    items: [
-      {
-        name: 'Cooffe',
-        quantity: 2
-      },
-      {
-        name: 'Latte',
-        quantity: 1
-      },
-      {
-        name: 'Latte',
-        quantity: 1
-      },
-      {
-        name: 'Latte',
-        quantity: 1
-      },
-      {
-        name: 'Latte',
-        quantity: 1
-      }
-    ]
-  },
-  {
-    date: '08:00 PM',
-    state: 'problem',
-    pickUpLocation: 'Bakery',
-    user: {
-      name: 'Fulano De Tal'
-    },
-    items: [
-      {
-        name: 'Water',
-        quantity: 2
-      }
-    ]
-  }
-]
-
 export default function Storefront() {
   const [visible, setVisible] = useState(false)
+  const [ordersFromToday, setOrdersFromToday] = useState([])
+  const [ordersFromWeek, setOrdersFromWeek] = useState([])
+  const [ordersFromUpcoming, setOrdersFromUpcoming] = useState([])
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setOrdersFromToday(await service.getAll('today'))
+      setOrdersFromWeek(await service.getAll('week'))
+      setOrdersFromUpcoming(await service.getAll('upcoming'))
+    }
+
+    fetchOrders()
+  }, []) //must be called when a new order was created, modified or deleted
 
   let formRef
 
   const options = { weekday: 'long', month: 'long', day: 'numeric' }
   const today = new Date()
-
   const tomorrow = new Date()
   tomorrow.setDate(today.getDate() + 1)
-
   const sunday = nextDay(7)
 
   const showModal = () => {
@@ -75,9 +40,14 @@ export default function Storefront() {
     setVisible(false)
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     console.log('Creating order...')
-    console.log(formRef.getForm().getFieldsValue())
+    const data = formRef.getForm().getFieldsValue()
+    data.items.length--
+    delete data.keys
+
+    await service.create(data)
+
     formRef.resetFields()
     setVisible(false)
   }
@@ -117,10 +87,10 @@ export default function Storefront() {
       <Text type="secondary">{today.toLocaleDateString('en-US', options)}</Text>
       <List
         grid={{ column: 1 }}
-        dataSource={data}
+        dataSource={ordersFromToday}
         renderItem={item => (
           <List.Item>
-            <Order item={item} />
+            <Order item={item} from="today" />
           </List.Item>
         )}
       />
@@ -135,10 +105,10 @@ export default function Storefront() {
       </Text>
       <List
         grid={{ column: 1 }}
-        dataSource={data}
+        dataSource={ordersFromWeek}
         renderItem={item => (
           <List.Item>
-            <Order item={item} />
+            <Order item={item} from="week" />
           </List.Item>
         )}
       />
@@ -150,11 +120,11 @@ export default function Storefront() {
       <Text type="secondary">After this week</Text>
       <List
         grid={{ column: 1 }}
-        dataSource={data}
+        dataSource={ordersFromUpcoming}
         renderItem={item => {
           return (
             <List.Item>
-              <Order item={item} />
+              <Order item={item} from="upcoming" />
             </List.Item>
           )
         }}
