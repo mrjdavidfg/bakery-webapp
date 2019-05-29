@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react'
 import { List, Divider, Row, Col, Tag, Typography, Input, Button } from 'antd'
 import Order from './Order'
-import OrderNewForm from './OrderNewForm'
+import OrderModalForm from './OrderModalForm'
 import * as service from '../service/orderService'
 
 const Search = Input.Search
@@ -41,7 +41,6 @@ export default function Storefront() {
   }
 
   const handleCreate = async () => {
-    console.log('Creating order...')
     const data = formRef.getForm().getFieldsValue()
     data.items.length--
     delete data.keys
@@ -52,7 +51,7 @@ export default function Storefront() {
     setVisible(false)
   }
 
-  const saveFormRef = (_formRef, index) => {
+  const saveFormRef = _formRef => {
     formRef = _formRef
   }
 
@@ -71,7 +70,7 @@ export default function Storefront() {
           >
             New Order
           </Button>
-          <OrderNewForm
+          <OrderModalForm
             ref={saveFormRef}
             visible={visible}
             onCancel={handleCancel}
@@ -88,9 +87,9 @@ export default function Storefront() {
       <List
         grid={{ column: 1 }}
         dataSource={ordersFromToday}
-        renderItem={item => (
+        renderItem={order => (
           <List.Item>
-            <Order item={item} from="today" />
+            <Order order={order} from="today" />
           </List.Item>
         )}
       />
@@ -106,9 +105,9 @@ export default function Storefront() {
       <List
         grid={{ column: 1 }}
         dataSource={ordersFromWeek}
-        renderItem={item => (
+        renderItem={order => (
           <List.Item>
-            <Order item={item} from="week" />
+            <Order order={order} from="week" />
           </List.Item>
         )}
       />
@@ -121,10 +120,10 @@ export default function Storefront() {
       <List
         grid={{ column: 1 }}
         dataSource={ordersFromUpcoming}
-        renderItem={item => {
+        renderItem={order => {
           return (
             <List.Item>
-              <Order item={item} from="upcoming" />
+              <Order order={order} from="upcoming" />
             </List.Item>
           )
         }}

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { List, Card, Row, Col, Tag, Icon, Typography } from 'antd'
+import { List, Card, Row, Col, Tag, Typography } from 'antd'
 import moment from 'moment'
+import OrderState from './OrderState'
 
 const { Title, Text } = Typography
 
 export default function Order(props) {
-  const { item, from } = props
-
+  const { order, from, handleClick } = props
+  console.log('order =', order)
   let color
 
-  switch (item.state) {
+  switch (order.state) {
     case 'New':
       color = 'blue'
       break
@@ -30,27 +31,25 @@ export default function Order(props) {
 
   switch (from) {
     case 'today':
-      displayDatePrimary = moment(item.dueDate).format('h:mm A')
+      displayDatePrimary = moment(order.dueDate).format('h:mm A')
       break
     case 'week':
-      displayDatePrimary = moment(item.dueDate).format('ddd D')
-      displayDateSecondary = moment(item.dueDate).format('h:mm A')
+      displayDatePrimary = moment(order.dueDate).format('ddd D')
+      displayDateSecondary = moment(order.dueDate).format('h:mm A')
       break
     default:
       //'upcoming'
-      displayDatePrimary = moment(item.dueDate).format('MMM D')
-      displayDateSecondary = moment(item.dueDate).format('dddd')
+      displayDatePrimary = moment(order.dueDate).format('MMM D')
+      displayDateSecondary = moment(order.dueDate).format('dddd')
       break
   }
 
   return (
-    <Card>
+    <Card onClick={handleClick}>
       <Row gutter={4}>
         <Col span={2}>
           <div>
-            <Tag color={color}>
-              {item.state == 'delivered' ? <Icon type="check" /> : item.state}
-            </Tag>
+            <OrderState state={order.state} />
           </div>
         </Col>
         <Col span={4}>
@@ -61,13 +60,13 @@ export default function Order(props) {
               <br />
             </Text>
           )}
-          <Text type="secondary">{item.pickUpLocation.name}</Text>
+          <Text type="secondary">{order.pickUpLocation.name}</Text>
         </Col>
         <Col span={18}>
-          <Title level={3}>{item.customer.name}</Title>
+          <Title level={3}>{order.customer.name}</Title>
           <List
             grid={{ gutter: 16, column: 2 }}
-            dataSource={item.items}
+            dataSource={order.items}
             renderItem={sub => (
               <List.Item>
                 <Tag color="gray">{sub.quantity}</Tag>

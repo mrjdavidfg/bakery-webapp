@@ -13,16 +13,15 @@ import {
   Icon,
   Steps,
   DatePicker,
-  TimePicker,
   Select,
   Typography,
   Divider,
   Popconfirm,
-  Tag,
-  Alert,
-  List,
-  Card
+  Alert
 } from 'antd'
+import { States } from './OrderState'
+import OrderReview from './OrderReview'
+import { range, wait } from '../service/Util'
 const { Text, Title } = Typography
 
 const steps = [
@@ -44,10 +43,11 @@ const steps = [
 let id = 0
 
 export default Form.create({ name: 'new_order_form' })(function(props) {
-  //#region STATE
-  const { visible, onCancel, onCreate, form } = props
+  const { visible, onCancel, onCreate, order, form } = props
+
   const { getFieldDecorator, getFieldValue, validateFields } = form
 
+  //#region STATE
   const [currentStep, setCurrentStep] = useState(0)
   const [products, setProducts] = useState(new Map())
   const [pickUpLocations, setPickUpLocations] = useState(new Map())
@@ -63,6 +63,40 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
   ) //control loading icon in dropdown when loading pickup locations
   const [isProductsLoading, setIsProductsLoading] = useState(false) //control loading icon in dropdown when loading pickup locations
   //#endregion
+
+  useEffect(() => {
+    const fechProducts = async () => {
+      const _products = await productService.getAll()
+      setProducts(new Map(_products.map(p => [p.id, p])))
+    }
+    const fechPickUpLocations = async () => {
+      const _pickUpLoc = await pickUpLocationService.getAll()
+      setPickUpLocations(new Map(_pickUpLoc.map(p => [p.id, p])))
+    }
+
+    if (wasProductsDropdownFocused) {
+      fechProducts()
+      setIsProductsLoading(false)
+    }
+    if (wasPickUpLocationsDropdownFocused) {
+      fechPickUpLocations()
+      setIsPickUpLocationsLoading(false)
+    }
+  }, [wasProductsDropdownFocused, wasPickUpLocationsDropdownFocused])
+
+  const loadProducts = () => {
+    if (!wasProductsDropdownFocused) {
+      setIsProductsLoading(true)
+      setWasProductsDropdownFocused(true)
+    }
+  }
+
+  const loadPickUpLocations = () => {
+    if (!wasPickUpLocationsDropdownFocused) {
+      setIsPickUpLocationsLoading(true)
+      setWasPickUpLocationsDropdownFocused(true)
+    }
+  }
 
   getFieldDecorator('keys', { initialValue: [0] })
   const keys = getFieldValue('keys')
@@ -91,18 +125,11 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
     })
   }
 
-  const loadProducts = () => {
-    if (!wasProductsDropdownFocused) {
-      setIsProductsLoading(true)
-      setWasProductsDropdownFocused(true)
-    }
-  }
-
   const productsFormItems = keys.map((k, index) => {
     const productId = getFieldValue(`items[${k}].product`)
     const quantity = getFieldValue(`items[${k}].quantity`) || 1
     let price
-    if (productId && quantity) {
+    if (productId) {
       price = products.get(productId).price * quantity
     }
 
@@ -193,6 +220,10 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
     })
     .reduce((a, b) => a + b)
 
+  const edit = () => {
+    setCurrentStep(1)
+  }
+
   const review = () => {
     validateFields((err, values) => {
       if (err) {
@@ -204,56 +235,42 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
         return
       }
 
-      setCurrentStep(1)
+      setCurrentStep(2)
     })
   }
 
   const back = () => {
-    setCurrentStep(0)
+    setCurrentStep(1)
   }
 
   const processOrder = async () => {
-    setCurrentStep(2)
+    setCurrentStep(3)
     await wait(1)
 
     await onCreate()
     setCurrentStep(0) //reset step for next openning of modal
   }
 
-  useEffect(() => {
-    const fechProducts = async () => {
-      const _products = await productService.getAll()
-      setProducts(new Map(_products.map(p => [p.id, p])))
-    }
-    const fechPickUpLocations = async () => {
-      const _pickUpLoc = await pickUpLocationService.getAll()
-      setPickUpLocations(new Map(_pickUpLoc.map(p => [p.id, p])))
-    }
-
-    if (wasProductsDropdownFocused) {
-      fechProducts()
-      setIsProductsLoading(false)
-    }
-    if (wasPickUpLocationsDropdownFocused) {
-      fechPickUpLocations()
-      setIsPickUpLocationsLoading(false)
-    }
-  }, [wasProductsDropdownFocused, wasPickUpLocationsDropdownFocused])
-
-  const loadPickUpLocations = () => {
-    if (!wasPickUpLocationsDropdownFocused) {
-      setIsPickUpLocationsLoading(true)
-      setWasPickUpLocationsDropdownFocused(true)
-    }
-  }
-
-  const totalStatistic = (
+  const totalText = (
     <div key="total" style={{ display: 'inline-block', marginRight: 10 }}>
       <Text>Total </Text>
       <Text strong style={{ fontSize: 20 }}>{`$ ${totalPrice || 0.0}`}</Text>
     </div>
   )
 
+  //#region Footer logic
+  //step 0
+  const modalFooterComment = [
+    <Button key="cancel" onClick={onCancel} style={{ float: 'left' }}>
+      Cancel
+    </Button>,
+    totalText,
+    <Button key="edit" type="primary" onClick={() => edit()}>
+      Edit Order
+      <Icon type="edit" />
+    </Button>
+  ]
+  //step 1
   const modalFooter = [
     <Popconfirm
       key="cancel"
@@ -265,35 +282,53 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
     >
       <Button style={{ float: 'left' }}>Cancel</Button>
     </Popconfirm>,
-    totalStatistic,
+    totalText,
     <Button key="review" type="primary" onClick={() => review()}>
       Review
       <Icon type="arrow-right" />
     </Button>
   ]
-
+  //step 2-3
   const modalFooterReview = [
     <Button
       key="back"
       onClick={() => back()}
       style={{ float: 'left' }}
-      disabled={currentStep === 2}
+      disabled={currentStep === 3}
     >
       <Icon type="arrow-left" />
       Back
     </Button>,
-    totalStatistic,
+    totalText,
     <Button
       key="ok"
       type="primary"
       onClick={async () => await processOrder()}
-      disabled={currentStep === 2}
-      loading={currentStep === 2}
+      disabled={currentStep === 3}
+      loading={currentStep === 3}
     >
       Process Order
       <Icon type="check" />
     </Button>
   ]
+
+  let footer
+
+  if (currentStep === 0 && !order) {
+    //if it's not edition
+    setCurrentStep(1) //step to the new form
+  }
+
+  let orderValues = form.getFieldsValue()
+
+  if (currentStep === 0) {
+    footer = modalFooterComment
+  } else if (currentStep === 1) {
+    footer = modalFooter
+  } else {
+    footer = modalFooterReview
+  }
+  //#endregion
 
   return (
     <Modal
@@ -308,11 +343,28 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
           </Steps>
         </React.Fragment>
       }
-      footer={currentStep === 0 ? modalFooter : modalFooterReview}
+      footer={footer}
       width={1000}
       closable={false}
     >
-      <Form layout="vertical" className={currentStep === 0 ? '' : 'hidden'}>
+      {currentStep === 0 && <OrderReview order={order} products={products} />}
+      <Form layout="vertical" className={currentStep === 1 ? '' : 'hidden'}>
+        {order && (
+          <div>
+            <Form.Item>
+              {getFieldDecorator('state', {})}(
+              <Select placeholder="Select a state">
+                {Array.from(States).map(s => (
+                  <Select.Option value={s} key={S}>
+                    {s}
+                  </Select.Option>
+                ))}
+              </Select>
+              )
+            </Form.Item>
+            <Text className="float-right">Order #{order.number}</Text>
+          </div>
+        )}
         <Row gutter={12}>
           {/* Fist Column */}
           <Col span={6}>
@@ -374,16 +426,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
                         message: 'Please input the customer name!'
                       }
                     ]
-                  })(
-                    <Input
-                      prefix={
-                        <Icon
-                          type="user"
-                          style={{ color: 'rgba(0,0,0,.25)' }}
-                        />
-                      }
-                    />
-                  )}
+                  })(<Input prefix={<Icon type="user" />} />)}
                 </Form.Item>
                 <Form.Item label="Aditional Details">
                   {getFieldDecorator('details', {
@@ -404,21 +447,10 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
                         message: 'Please input the customer phone!'
                       }
                     ]
-                  })(
-                    <Input
-                      prefix={
-                        <Icon
-                          type="phone"
-                          style={{ color: 'rgba(0,0,0,.25)' }}
-                        />
-                      }
-                    />
-                  )}
+                  })(<Input prefix={<Icon type="phone" />} />)}
                 </Form.Item>
               </Col>
             </Row>
-
-            <Row gutter={6} />
           </Col>
         </Row>
         {/* Products Row */}
@@ -427,8 +459,10 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
           {productsFormItems}
         </Row>
       </Form>
-      {currentStep === 1 && <Review form={form} products={products} />}
       {currentStep === 2 && (
+        <OrderReview order={orderValues} products={products} />
+      )}
+      {currentStep === 3 && (
         <div className="flex-full-center">
           <Alert message="Order created" type="success" />
         </div>
@@ -436,101 +470,6 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
     </Modal>
   )
 })
-
-const Review = props => {
-  const { form, products } = props
-
-  const { name, details, phone, dueDate, items } = form.getFieldsValue()
-
-  return (
-    <div>
-      <Row>
-        <Col span={4}>
-          <Text>Due</Text>
-          <br />
-          <Title level={2}>{dueDate.format('MMM D')}</Title>
-          <Text>Friday</Text>
-        </Col>
-        <Col span={4}>
-          <Text />
-          <br />
-          <Title level={2}>{dueDate.format('LT')}</Title>
-          <Text>Store</Text>
-        </Col>
-        <Col span={12}>
-          <Text>Customer</Text>
-          <br />
-          <Title level={2}>{name}</Title>
-          {details && (
-            <React.Fragment>
-              <Text strong>Aditional details</Text>
-              <br />
-              <Text>{details}</Text>
-            </React.Fragment>
-          )}
-        </Col>
-        <Col span={4}>
-          <Text>Phone Number</Text>
-          <br />
-          <Title level={2}>{phone}</Title>
-        </Col>
-      </Row>
-      <Row>
-        <Divider>Products</Divider>
-        <List
-          grid={{
-            gutter: 10,
-            column: 2
-          }}
-          dataSource={items.filter(i => i.product)}
-          renderItem={item => (
-            <List.Item>
-              <Card
-                bodyStyle={{
-                  padding: 10
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
-                >
-                  <Title
-                    level={4}
-                    style={{ display: 'inline-block', marginBottom: 0 }}
-                  >
-                    {products.get(item.product).name}
-                  </Title>
-                  <div>
-                    <Tag>{item.quantity}</Tag>x
-                    <Text>
-                      {' '}
-                      ${products.get(item.product).price * item.quantity}
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            </List.Item>
-          )}
-        />
-      </Row>
-    </div>
-  )
-}
-
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms * 1000))
-}
-
-function range(start, end) {
-  const result = []
-  for (let i = start; i < end; i++) {
-    result.push(i)
-  }
-  return result
-}
 
 function disabledDate(current) {
   // Can not select days before today and today

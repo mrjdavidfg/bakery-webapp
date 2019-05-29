@@ -8,6 +8,8 @@ export const getAll = async from => {
     }
   })
   orders = await orders.json()
+  console.log('from=', from)
+  console.log(orders)
   return orders
 }
 
