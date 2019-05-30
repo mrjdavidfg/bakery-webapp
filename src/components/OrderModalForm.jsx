@@ -126,7 +126,9 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
   }
 
   const productsFormItems = keys.map((k, index) => {
-    const productId = getFieldValue(`items[${k}].product`)
+    const productId = getFieldValue(
+      `items[${k}].product`
+    ) /*|| order && order.items[k].product.id*/
     const quantity = getFieldValue(`items[${k}].quantity`) || 1
     let price
     if (productId) {
@@ -141,7 +143,9 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
             <Row gutter={6}>
               <Col span={18}>
                 <Form.Item label="Product">
-                  {getFieldDecorator(`items[${k}].product`)(
+                  {getFieldDecorator(`items[${k}].product`, {
+                    initialValue: order && order.items[k].product.id
+                  })(
                     <Select
                       placeholder="Select a product"
                       onSelect={() => add(k)}
@@ -161,7 +165,9 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
               <Col span={6}>
                 <Form.Item label="Quantity">
                   {getFieldDecorator(`items[${k}].quantity`, {
-                    initialValue: productId ? 1 : undefined
+                    initialValue:
+                      (order && order.items[k].quantity) ||
+                      (productId ? 1 : undefined)
                   })(
                     <InputNumber
                       min={1}
@@ -174,7 +180,9 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
               </Col>
             </Row>
             <Form.Item label="Details">
-              {getFieldDecorator(`items[${k}].details`)(
+              {getFieldDecorator(`items[${k}].details`, {
+                initialValue: order && order.items[k].details
+              })(
                 <Input
                   placeholder="Details"
                   disabled={productId ? false : true}
@@ -352,7 +360,10 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
         {order && (
           <div>
             <Form.Item>
-              {getFieldDecorator('state', {})}(
+              {getFieldDecorator('state', {
+                initialValue: order && order.state
+              })}
+              (
               <Select placeholder="Select a state">
                 {Array.from(States).map(s => (
                   <Select.Option value={s} key={S}>
@@ -370,10 +381,12 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
           <Col span={6}>
             <Form.Item label="Due Date">
               {getFieldDecorator('dueDate', {
-                initialValue: moment(new Date())
-                  .add(1, 'days')
-                  .add(1, 'hour')
-                  .startOf('hour'),
+                initialValue:
+                  (order && moment(order.dueDate)) ||
+                  moment(new Date())
+                    .add(1, 'days')
+                    .add(1, 'hour')
+                    .startOf('hour'),
                 rules: [
                   {
                     type: 'object',
@@ -398,7 +411,9 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
               )}
             </Form.Item>
             <Form.Item label="PickUp Location">
-              {getFieldDecorator(`pickUpLocation`)(
+              {getFieldDecorator(`pickUpLocation`, {
+                initialValue: order && order.pickUpLocation.id
+              })(
                 <Select
                   placeholder="Select a pick up location"
                   onFocus={() => loadPickUpLocations()}
@@ -420,6 +435,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
               <Col span={18}>
                 <Form.Item label="Customer">
                   {getFieldDecorator('name', {
+                    initialValue: order && order.customer.name,
                     rules: [
                       {
                         required: true,
@@ -430,6 +446,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
                 </Form.Item>
                 <Form.Item label="Aditional Details">
                   {getFieldDecorator('details', {
+                    initialValue: order && order.customer.details,
                     rules: [
                       {
                         required: false
@@ -441,6 +458,7 @@ export default Form.create({ name: 'new_order_form' })(function(props) {
               <Col span={6}>
                 <Form.Item label="Phone">
                   {getFieldDecorator('phone', {
+                    initialValue: order && order.customer.phone,
                     rules: [
                       {
                         required: true,

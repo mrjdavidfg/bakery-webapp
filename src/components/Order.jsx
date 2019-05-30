@@ -7,7 +7,7 @@ const { Title, Text } = Typography
 
 export default function Order(props) {
   const { order, from, handleClick } = props
-  console.log('order =', order)
+
   let color
 
   switch (order.state) {
